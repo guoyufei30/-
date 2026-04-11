@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>女性权益数据探索 | 政治赋权 vs 经济参与 | 多维度分析</title>
+    <title>女性权益数据探索 | 政治赋权 vs 经济参与</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -19,10 +19,12 @@
         select, button { padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid #cbd5e1; background: white; font-family: inherit; font-size: 0.85rem; cursor: pointer; }
         button { background: #3b82f6; color: white; border: none; transition: all 0.2s; }
         button:hover { background: #2563eb; transform: translateY(-1px); }
+        .mode-btn { background: #8b5cf6; }
+        .mode-btn-active { background: #ef4444; }
+        .mode-btn-active:hover { background: #dc2626; }
         .checkbox-group { display: flex; align-items: center; gap: 0.75rem; background: #f1f5f9; padding: 0.4rem 1rem; border-radius: 2rem; }
         .checkbox-group input { width: 18px; height: 18px; cursor: pointer; margin: 0; }
-        .checkbox-group label { font-size: 0.75rem; cursor: pointer; margin: 0; text-transform: none; font-weight: 500; }
-        .status-bar { padding: 0.75rem 1.5rem; background: #eef2ff; font-size: 0.8rem; color: #1e40af; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .status-bar { padding: 0.75rem 1.5rem; background: #eef2ff; font-size: 0.8rem; color: #1e40af; border-bottom: 1px solid #e2e8f0; text-align: center; }
         .vis-container { padding: 1.5rem; min-height: 550px; }
         svg { display: block; width: 100%; background: #ffffff; border-radius: 0.75rem; cursor: grab; }
         svg:active { cursor: grabbing; }
@@ -46,72 +48,62 @@
         .doc-section p, .doc-section li { color: #475569; font-size: 0.85rem; line-height: 1.5; }
         footer { padding: 1rem; background: #0f172a; color: #94a3b8; text-align: center; font-size: 0.7rem; }
         @media (max-width: 768px) { body { padding: 0.5rem; } .controls { flex-direction: column; align-items: stretch; } }
+        
+        .brush .selection { fill: #3b82f6; fill-opacity: 0.2; stroke: #3b82f6; stroke-width: 1.5; stroke-dasharray: 4,2; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>⚖️ 政治赋权 vs 经济参与</h1>
+        <h1>政治赋权 vs 经济参与</h1>
         <p>女性国会席位比例 | 女性劳动参与率 | 圆圈大小 = 面积线性编码</p>
         <div class="question-box">
-            <strong>🎯 核心问题：</strong> 女性政治代表比例越高，是否意味着更好的经济参与、教育平等和健康水平？
+            <strong>核心问题：</strong> 女性政治代表比例越高，是否意味着更好的经济参与、教育平等和健康水平？
         </div>
     </div>
 
-    <div class="status-bar" id="statusBar">
-        <span id="statusMsg">📁 正在加载CSV数据文件...</span>
-        <span id="statusDetail"></span>
-    </div>
+    <div class="status-bar" id="statusBar"></div>
 
     <div class="controls">
         <div class="control-group">
-            <label>📊 X轴 (政治赋权)</label>
-            <select id="xMetric">
-                <option value="parliament">女性国会席位比例 (%)</option>
-            </select>
+            <label>X轴 (政治赋权)</label>
+            <select id="xMetric"><option value="parliament">女性国会席位比例 (%)</option></select>
         </div>
         <div class="control-group">
-            <label>📈 Y轴 (经济参与)</label>
-            <select id="yMetric">
-                <option value="laborForce">女性劳动参与率 (%)</option>
-            </select>
+            <label>Y轴 (经济参与)</label>
+            <select id="yMetric"><option value="laborForce">女性劳动参与率 (%)</option></select>
         </div>
         <div class="control-group">
-            <label>🔵 圆圈大小 (第三维度)</label>
+            <label>圆圈大小</label>
             <select id="sizeMetric">
-                <option value="literacyRatio">📚 识字率性别比 (女/男) - 教育平等</option>
-                <option value="literacyFemale">📖 女性识字率 (%) - 教育水平</option>
-                <option value="adolescentFertility">👶 青少年生育率 (反向) - 生育健康</option>
-                <option value="lifeExpectancy">💪 女性预期寿命 (岁) - 健康水平</option>
-                <option value="none">⚪ 无大小区分 (统一大小)</option>
+                <option value="literacyRatio">识字率性别比 - 教育平等</option>
+                <option value="literacyFemale">女性识字率 - 教育水平</option>
+                <option value="adolescentFertility">青少年生育率(反向) - 生育健康</option>
+                <option value="lifeExpectancy">女性预期寿命 - 健康水平</option>
+                <option value="none">统一大小</option>
             </select>
         </div>
         <div class="control-group">
-            <label>🌍 地区筛选</label>
-            <select id="regionFilter">
-                <option value="all">全部地区</option>
-            </select>
+            <label>地区筛选</label>
+            <select id="regionFilter"><option value="all">全部地区</option></select>
         </div>
         <div class="control-group">
-            <label>📅 年份</label>
+            <label>年份</label>
             <select id="yearSelect">
-                <option value="2023">2023</option>
-                <option value="2022">2022</option>
-                <option value="2021">2021</option>
-                <option value="2020">2020</option>
+                <option value="2023">2023</option><option value="2022">2022</option>
+                <option value="2021">2021</option><option value="2020">2020</option>
                 <option value="2019">2019</option>
             </select>
         </div>
         <div class="checkbox-group">
             <input type="checkbox" id="showOnlyComplete">
-            <label for="showOnlyComplete">📊 只显示有圆圈大小数据的国家</label>
+            <label for="showOnlyComplete">只显示有圆圈数据国家</label>
         </div>
-        <button id="resetBtn">⟳ 重置视图</button>
+        <button id="brushModeBtn" class="mode-btn">🔘 刷选模式</button>
+        <button id="resetBtn">重置视图</button>
     </div>
 
-    <div class="vis-container">
-        <div id="scatterplot"></div>
-    </div>
+    <div class="vis-container"><div id="scatterplot"></div></div>
 
     <div class="legend">
         <span><span class="legend-color" style="background: #3b82f6;"></span> 欧洲</span>
@@ -129,65 +121,222 @@
         <div class="legend-size-group" id="uniformLegend" style="display:none;">
             <span class="legend-size-item"><span class="legend-circle circle-uniform"></span>统一大小</span>
         </div>
-        <span>🔍 鼠标滚轮缩放 | 拖拽平移 | 悬停查看详情</span>
+        <span>滚轮缩放 | 拖拽平移 | 悬停详情</span>
+        <span id="modeIndicator" style="background:#f1f5f9; padding:2px 8px; border-radius:16px;">平移模式</span>
     </div>
 
     <div class="stats-bar">
-        <div class="stat-card"><div class="stat-value" id="countryCount">--</div><div class="stat-label">显示国家数量</div></div>
-        <div class="stat-card"><div class="stat-value" id="sizeDataCount">--</div><div class="stat-label">有圆圈数据国家</div></div>
-        <div class="stat-card"><div class="stat-value" id="correlation">--</div><div class="stat-label">政治-经济相关系数</div></div>
+        <div class="stat-card"><div class="stat-value" id="countryCount">--</div><div class="stat-label">国家数量</div></div>
+        <div class="stat-card"><div class="stat-value" id="correlation">--</div><div class="stat-label">相关系数</div></div>
         <div class="stat-card"><div class="stat-value" id="bestCountry">--</div><div class="stat-label">最高政治赋权</div></div>
+        <div class="stat-card"><div class="stat-value" id="selectedCount">0</div><div class="stat-label">框选国家</div></div>
     </div>
 
     <div class="documentation">
         <div class="doc-section">
-            <h3>📊 圆圈大小说明（面积线性编码）</h3>
+            <h3>交互说明</h3>
             <ul>
-                <li><strong>📚 识字率性别比</strong>：比值越高 → 圆圈越大（女/男）</li>
-                <li><strong>📖 女性识字率</strong>：识字率越高 → 圆圈越大</li>
-                <li><strong>👶 青少年生育率</strong>：生育率越低 → 圆圈越大（反向编码）</li>
-                <li><strong>💪 女性预期寿命</strong>：寿命越长 → 圆圈越大</li>
+                <li><strong>平移模式（默认）</strong>：鼠标拖拽平移，滚轮缩放，悬停显示详情</li>
+                <li><strong>刷选模式</strong>：点击按钮后，拖拽框选高亮国家</li>
             </ul>
-            <p><strong>📐 面积线性编码：</strong> 圆的面积 ∝ 数值，半径范围 4-12px</p>
         </div>
     </div>
-    <footer>数据来源：世界银行开放数据 | 圆圈大小使用面积线性编码，避免大圆覆盖小圆</footer>
+    <footer>数据来源：世界银行开放数据</footer>
 </div>
 
 <script>
-    // 全局变量
-    let allData = [];
-    let regionSet = new Set();
-    let currentRegion = "all";
-    let currentSizeMetric = "literacyRatio";
-    let currentYear = 2023;
-    let showOnlyComplete = false;
-    let svg, g, zoom, xScale, yScale, tooltip;
-    let width = 800, height = 500;
+    let allData = [], regionSet = new Set(), selectedCountries = new Set();
+    let currentRegion = "all", currentSizeMetric = "literacyRatio", currentYear = 2023, showOnlyComplete = false, brushMode = false;
+    let svg, g, xScale, yScale, tooltip, width = 800, height = 550;
+    let brushGroup = null, circles = null, zoomBehavior = null, currentTransform = d3.zoomIdentity;
 
     const regionColors = {
-        'Europe & Central Asia': '#3b82f6',
-        'East Asia & Pacific': '#f59e0b',
-        'Sub-Saharan Africa': '#ef4444',
-        'Latin America & Caribbean': '#10b981',
-        'Middle East & North Africa': '#8b5cf6',
-        'North America': '#06b6d4',
-        'South Asia': '#ec489a'
+        'Europe & Central Asia': '#3b82f6', 'East Asia & Pacific': '#f59e0b',
+        'Sub-Saharan Africa': '#ef4444', 'Latin America & Caribbean': '#10b981',
+        'Middle East & North Africa': '#8b5cf6', 'North America': '#06b6d4', 'South Asia': '#ec489a'
     };
+    const RADIUS_MIN = 4, RADIUS_MAX = 12, DEFAULT_RADIUS = 7;
 
-    // ========== 面积线性编码参数 ==========
-    // 半径范围缩小到 4-12px，最大圆面积是最小圆的9倍，差异明显但不会过度重叠
-    const RADIUS_MIN = 4;
-    const RADIUS_MAX = 12;
-    const DEFAULT_RADIUS = 7;
-
-    function setStatus(message, isError = false) {
-        document.getElementById('statusMsg').innerHTML = isError ? `❌ ${message}` : `📁 ${message}`;
-        document.getElementById('statusBar').style.background = isError ? '#fee2e2' : '#eef2ff';
+    function setStatus(msg) { document.getElementById('statusBar').innerHTML = msg; }
+    function hideTooltip() { if (tooltip) tooltip.style("opacity", 0); }
+    function updateHighlight() {
+        if (!circles) return;
+        circles.attr("stroke", d => selectedCountries.has(d.code) ? "#f59e0b" : "white")
+               .attr("stroke-width", d => selectedCountries.has(d.code) ? 3 : 1);
+        document.getElementById('selectedCount').innerHTML = selectedCountries.size;
     }
 
-    function setStatusDetail(detail) {
-        document.getElementById('statusDetail').innerHTML = detail;
+    function parseCSVLine(line) {
+        let result = [], inQuote = false, current = '';
+        for (let char of line) {
+            if (char === '"') inQuote = !inQuote;
+            else if (char === ',' && !inQuote) { result.push(current); current = ''; }
+            else current += char;
+        }
+        result.push(current);
+        return result.map(s => s.replace(/^"|"$/g, '').trim());
+    }
+
+    async function loadIndicator(filePath, year, maxVal = 100) {
+        try {
+            const resp = await fetch(filePath);
+            if (!resp.ok) return new Map();
+            const text = await resp.text(), lines = text.split(/\r?\n/);
+            let dataStart = -1;
+            for (let i = 0; i < 20; i++) 
+                if (lines[i].includes('Country Name') && lines[i].includes('Country Code')) { dataStart = i; break; }
+            if (dataStart === -1) return new Map();
+            const headers = parseCSVLine(lines[dataStart]);
+            let yearCol = -1;
+            for (let i = 0; i < headers.length; i++) 
+                if (parseInt(headers[i]) === year) { yearCol = i; break; }
+            if (yearCol === -1) return new Map();
+            const dataMap = new Map();
+            for (let i = dataStart + 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const cols = parseCSVLine(line);
+                if (cols.length < 3) continue;
+                const code = cols[1], name = cols[0];
+                if (!code || code.length !== 3) continue;
+                if (['WLD','ARB','AFE','AFW','CEB','CSS','EAR','EAS','ECA','ECS','EMU','EUU',
+                     'FCS','HIC','HPC','IBD','IBT','IDA','IDB','IDX','LAC','LCN','LDC','LIC',
+                     'LMC','LMY','LTE','MEA','MIC','MNA','NAC','OED','OSS','PRE','PSS','PST',
+                     'SAS','SST','SSA','SSF','TEA','TEC','TLA','TMN','TSA','TSS','UMC','INX'].includes(code)) continue;
+                let val = cols[yearCol];
+                if (val && val !== '' && val !== 'null') {
+                    let num = parseFloat(val);
+                    if (!isNaN(num) && num > 0) {
+                        if (maxVal === 100 && num > 100) num = 100;
+                        dataMap.set(code, { code, name, value: num });
+                    }
+                }
+            }
+            return dataMap;
+        } catch(e) { return new Map(); }
+    }
+
+    async function loadMetadata() {
+        try {
+            const resp = await fetch('Metadata_Country_API_SG.GEN.PARL.ZS_DS2_en_csv_v2_188.csv');
+            if (!resp.ok) return new Map();
+            const text = await resp.text(), lines = text.split(/\r?\n/);
+            let headerLine = -1;
+            for (let i = 0; i < 10; i++) 
+                if (lines[i].includes('Country Code') && lines[i].includes('Region')) { headerLine = i; break; }
+            if (headerLine === -1) return new Map();
+            const headers = parseCSVLine(lines[headerLine]);
+            const codeIdx = headers.indexOf('Country Code'), regionIdx = headers.indexOf('Region');
+            const metadata = new Map();
+            for (let i = headerLine + 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const cols = parseCSVLine(line);
+                if (cols.length < 3) continue;
+                const code = cols[codeIdx];
+                if (!code || code.length !== 3) continue;
+                let region = cols[regionIdx];
+                if (region && region !== '') metadata.set(code, { region });
+            }
+            return metadata;
+        } catch(e) { return new Map(); }
+    }
+
+    async function loadAllData() {
+        setStatus("加载数据中...");
+        const [parliament, labor, litF, litM, adoFert, lifeExp, metadata] = await Promise.all([
+            loadIndicator('API_SG.GEN.PARL.ZS_DS2_en_csv_v2_188.csv', currentYear),
+            loadIndicator('API_SL.TLF.CACT.FE.ZS_DS2_en_csv_v2_213501.csv', currentYear),
+            loadIndicator('API_SE.ADT.LITR.FE.ZS_DS2_en_csv_v2_4635.csv', currentYear),
+            loadIndicator('API_SE.ADT.LITR.MA.ZS_DS2_en_csv_v2_6466.csv', currentYear),
+            loadIndicator('API_SP.ADO.TFRT_DS2_EN_csv_v2_8055.csv', currentYear, 300),
+            loadIndicator('API_SP.DYN.LE00.FE.IN_DS2_en_csv_v2_4584.csv', currentYear, 100),
+            loadMetadata()
+        ]);
+        const allCodes = new Set([...parliament.keys(), ...labor.keys()]);
+        allData = []; regionSet.clear();
+        let litRatioVals = [], litFemaleVals = [], adoVals = [], lifeVals = [];
+        for (const code of allCodes) {
+            const p = parliament.get(code), l = labor.get(code);
+            if (p && l) {
+                const f = litF.get(code)?.value, m = litM.get(code)?.value;
+                const ratio = (f && m) ? f / m : null;
+                const ado = adoFert.get(code)?.value || null;
+                const life = lifeExp.get(code)?.value || null;
+                if (ratio !== null) litRatioVals.push(ratio);
+                if (f !== null) litFemaleVals.push(f);
+                if (ado !== null) adoVals.push(ado);
+                if (life !== null) lifeVals.push(life);
+                allData.push({
+                    code, country: p.name || l.name || code,
+                    region: metadata.get(code)?.region || 'Unknown',
+                    parliament: p.value, laborForce: l.value,
+                    literacy_female: f, literacy_male: m, literacy_ratio: ratio,
+                    adolescent_fertility: ado, life_expectancy: life,
+                    hasLiteracy: ratio !== null, hasAdolescent: ado !== null, hasLife: life !== null
+                });
+                regionSet.add(metadata.get(code)?.region || 'Unknown');
+            }
+        }
+        window.domains = {
+            literacyRatio: litRatioVals.length ? [Math.min(...litRatioVals), Math.max(...litRatioVals)] : [0.7, 1.05],
+            literacyFemale: litFemaleVals.length ? [Math.min(...litFemaleVals), Math.max(...litFemaleVals)] : [0, 100],
+            adolescentFertility: adoVals.length ? [Math.min(...adoVals), Math.max(...adoVals)] : [0, 200],
+            lifeExpectancy: lifeVals.length ? [Math.min(...lifeVals), Math.max(...lifeVals)] : [50, 85]
+        };
+        allData.sort((a,b) => b.parliament - a.parliament);
+        const regionSelect = document.getElementById('regionFilter');
+        regionSelect.innerHTML = '<option value="all">全部地区</option>';
+        [...regionSet].sort().forEach(r => regionSelect.innerHTML += `<option value="${r}">${r}</option>`);
+        setStatus(`加载完成！共 ${allData.length} 个国家`);
+        return true;
+    }
+
+    function getFilteredData() {
+        let data = currentRegion === "all" ? [...allData] : allData.filter(d => d.region === currentRegion);
+        if (showOnlyComplete) {
+            if (currentSizeMetric === 'literacyRatio' || currentSizeMetric === 'literacyFemale') data = data.filter(d => d.hasLiteracy);
+            else if (currentSizeMetric === 'adolescentFertility') data = data.filter(d => d.hasAdolescent);
+            else if (currentSizeMetric === 'lifeExpectancy') data = data.filter(d => d.hasLife);
+        }
+        return data;
+    }
+
+    function getSizeValue(d) {
+        if (currentSizeMetric === 'none') return null;
+        if (currentSizeMetric === 'literacyRatio') return d.literacy_ratio;
+        if (currentSizeMetric === 'literacyFemale') return d.literacy_female;
+        if (currentSizeMetric === 'adolescentFertility') return d.adolescent_fertility;
+        if (currentSizeMetric === 'lifeExpectancy') return d.life_expectancy;
+        return null;
+    }
+
+    function getRadius(value) {
+        if (currentSizeMetric === 'none' || value === null) return DEFAULT_RADIUS;
+        const d = window.domains;
+        let min, max, norm;
+        switch(currentSizeMetric) {
+            case 'literacyRatio': min = d.literacyRatio[0]; max = d.literacyRatio[1]; norm = (value - min) / (max - min); break;
+            case 'literacyFemale': min = d.literacyFemale[0]; max = d.literacyFemale[1]; norm = (value - min) / (max - min); break;
+            case 'adolescentFertility': min = d.adolescentFertility[0]; max = d.adolescentFertility[1]; norm = (max - value) / (max - min); break;
+            case 'lifeExpectancy': min = d.lifeExpectancy[0]; max = d.lifeExpectancy[1]; norm = (value - min) / (max - min); break;
+            default: return DEFAULT_RADIUS;
+        }
+        norm = Math.max(0, Math.min(1, norm));
+        return RADIUS_MIN + Math.sqrt(norm) * (RADIUS_MAX - RADIUS_MIN);
+    }
+
+    function computeCorrelation(data) {
+        if (data.length < 2) return 0;
+        const x = data.map(d => d.parliament), y = data.map(d => d.laborForce);
+        const mx = x.reduce((a,b)=>a+b,0)/x.length, my = y.reduce((a,b)=>a+b,0)/y.length;
+        let num=0, dx=0, dy=0;
+        for(let i=0;i<x.length;i++) {
+            num += (x[i]-mx)*(y[i]-my);
+            dx += (x[i]-mx)*(x[i]-mx);
+            dy += (y[i]-my)*(y[i]-my);
+        }
+        return num / Math.sqrt(dx*dy);
     }
 
     function updateLegend() {
@@ -202,551 +351,179 @@
         }
     }
 
-    function parseCSVLine(line) {
-        const result = [];
-        let inQuote = false;
-        let current = '';
-        for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-            if (char === '"') {
-                inQuote = !inQuote;
-            } else if (char === ',' && !inQuote) {
-                result.push(current);
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        result.push(current);
-        return result.map(s => s.replace(/^"|"$/g, '').trim());
-    }
-
-    async function loadWorldBankIndicator(filePath, indicatorName, year, maxValue = 100) {
-        try {
-            const response = await fetch(filePath);
-            if (!response.ok) {
-                console.warn(`${indicatorName}: 文件不存在，路径: ${filePath}`);
-                return new Map();
-            }
-            const text = await response.text();
-            const lines = text.split(/\r?\n/);
-            
-            let dataStartLine = -1;
-            for (let i = 0; i < Math.min(lines.length, 20); i++) {
-                if (lines[i].includes('Country Name') && lines[i].includes('Country Code')) {
-                    dataStartLine = i;
-                    break;
+    function setupBrush() {
+        const filtered = getFilteredData();
+        const margin = { top: 50, right: 50, bottom: 60, left: 80 };
+        const innerW = width - margin.left - margin.right, innerH = height - margin.top - margin.bottom;
+        const brush = d3.brush()
+            .extent([[0, 0], [innerW, innerH]])
+            .on("brush", function(e) {
+                if (!brushMode || !e.selection) return;
+                const [[x0, y0], [x1, y1]] = e.selection;
+                const selected = [];
+                filtered.forEach(d => {
+                    const cx = xScale(d.parliament), cy = yScale(d.laborForce);
+                    if (cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1) selected.push(d.code);
+                });
+                selectedCountries.clear();
+                selected.forEach(c => selectedCountries.add(c));
+                updateHighlight();
+            })
+            .on("end", function(e) {
+                if (!brushMode && e.selection === null && e.sourceEvent) {
+                    selectedCountries.clear();
+                    updateHighlight();
                 }
-            }
-            
-            if (dataStartLine === -1) return new Map();
-            
-            const headers = parseCSVLine(lines[dataStartLine]);
-            
-            let yearColIndex = -1;
-            for (let i = 0; i < headers.length; i++) {
-                const colYear = parseInt(headers[i]);
-                if (!isNaN(colYear) && colYear === year) {
-                    yearColIndex = i;
-                    break;
-                }
-            }
-            
-            if (yearColIndex === -1) return new Map();
-            
-            const dataMap = new Map();
-            for (let i = dataStartLine + 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                
-                const columns = parseCSVLine(line);
-                if (columns.length < 3) continue;
-                
-                const countryCode = columns[1];
-                const countryName = columns[0];
-                
-                if (!countryCode || countryCode.length !== 3) continue;
-                // 跳过汇总行
-                if (countryCode === 'WLD' || countryCode === 'ARB' || countryCode === 'AFE' || 
-                    countryCode === 'AFW' || countryCode === 'CEB' || countryCode === 'CSS' ||
-                    countryCode === 'EAR' || countryCode === 'EAS' || countryCode === 'ECA' ||
-                    countryCode === 'ECS' || countryCode === 'EMU' || countryCode === 'EUU' ||
-                    countryCode === 'FCS' || countryCode === 'HIC' || countryCode === 'HPC' ||
-                    countryCode === 'IBD' || countryCode === 'IBT' || countryCode === 'IDA' ||
-                    countryCode === 'IDB' || countryCode === 'IDX' || countryCode === 'LAC' ||
-                    countryCode === 'LCN' || countryCode === 'LDC' || countryCode === 'LIC' ||
-                    countryCode === 'LMC' || countryCode === 'LMY' || countryCode === 'LTE' ||
-                    countryCode === 'MEA' || countryCode === 'MIC' || countryCode === 'MNA' ||
-                    countryCode === 'NAC' || countryCode === 'OED' || countryCode === 'OSS' ||
-                    countryCode === 'PRE' || countryCode === 'PSS' || countryCode === 'PST' ||
-                    countryCode === 'SAS' || countryCode === 'SST' || countryCode === 'SSA' ||
-                    countryCode === 'SSF' || countryCode === 'TEA' || countryCode === 'TEC' ||
-                    countryCode === 'TLA' || countryCode === 'TMN' || countryCode === 'TSA' ||
-                    countryCode === 'TSS' || countryCode === 'UMC' || countryCode === 'INX') {
-                    continue;
-                }
-                
-                let value = columns[yearColIndex];
-                if (value && value !== '' && value !== 'null' && value !== 'NaN') {
-                    let numValue = parseFloat(value);
-                    if (!isNaN(numValue) && numValue > 0) {
-                        if (maxValue === 100 && numValue > 100) numValue = 100;
-                        dataMap.set(countryCode, {
-                            code: countryCode,
-                            name: countryName,
-                            value: numValue
-                        });
-                    }
-                }
-            }
-            
-            console.log(`${indicatorName}: ${dataMap.size} 个国家`);
-            return dataMap;
-        } catch (error) {
-            console.error(`加载 ${indicatorName} 失败:`, error);
-            return new Map();
-        }
-    }
-
-    async function loadMetadata() {
-        try {
-            const response = await fetch('Metadata_Country_API_SG.GEN.PARL.ZS_DS2_en_csv_v2_188.csv');
-            if (!response.ok) return new Map();
-            const text = await response.text();
-            const lines = text.split(/\r?\n/);
-            
-            let headerLine = -1;
-            for (let i = 0; i < Math.min(lines.length, 10); i++) {
-                if (lines[i].includes('Country Code') && lines[i].includes('Region')) {
-                    headerLine = i;
-                    break;
-                }
-            }
-            
-            if (headerLine === -1) return new Map();
-            
-            const headers = parseCSVLine(lines[headerLine]);
-            const codeIdx = headers.indexOf('Country Code');
-            const regionIdx = headers.indexOf('Region');
-            const incomeIdx = headers.indexOf('IncomeGroup');
-            
-            const metadata = new Map();
-            for (let i = headerLine + 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                
-                const columns = parseCSVLine(line);
-                if (columns.length < 3) continue;
-                
-                const code = columns[codeIdx];
-                if (!code || code.length !== 3) continue;
-                
-                let region = columns[regionIdx];
-                if (region && region !== '') {
-                    metadata.set(code, {
-                        region: region,
-                        incomeLevel: columns[incomeIdx] || 'Unknown'
-                    });
-                }
-            }
-            
-            console.log(`元数据: ${metadata.size} 个国家`);
-            return metadata;
-        } catch (error) {
-            console.error('加载元数据失败:', error);
-            return new Map();
-        }
-    }
-
-    async function loadAllData() {
-        setStatus(`正在加载 ${currentYear} 年数据...`);
-        
-        try {
-            const [parliamentMap, laborForceMap, literacyFemaleMap, literacyMaleMap, adolescentFertilityMap, lifeExpectancyMap, metadata] = await Promise.all([
-                loadWorldBankIndicator('API_SG.GEN.PARL.ZS_DS2_en_csv_v2_188.csv', '议会数据', currentYear),
-                loadWorldBankIndicator('API_SL.TLF.CACT.FE.ZS_DS2_en_csv_v2_213501.csv', '劳动参与率', currentYear),
-                loadWorldBankIndicator('API_SE.ADT.LITR.FE.ZS_DS2_en_csv_v2_4635.csv', '女性识字率', currentYear),
-                loadWorldBankIndicator('API_SE.ADT.LITR.MA.ZS_DS2_en_csv_v2_6466.csv', '男性识字率', currentYear),
-                loadWorldBankIndicator('API_SP.ADO.TFRT_DS2_EN_csv_v2_8055.csv', '青少年生育率', currentYear, 300),
-                loadWorldBankIndicator('API_SP.DYN.LE00.FE.IN_DS2_en_csv_v2_4584.csv', '女性预期寿命', currentYear, 100),
-                loadMetadata()
-            ]);
-            
-            const allCodes = new Set([...parliamentMap.keys(), ...laborForceMap.keys()]);
-            
-            allData = [];
-            regionSet.clear();
-            let withAdolescentCount = 0;
-            let withLifeExpectancyCount = 0;
-            
-            // 收集各指标的值域
-            let literacyRatioValues = [];
-            let literacyFemaleValues = [];
-            let adolescentFertilityValues = [];
-            let lifeExpectancyValues = [];
-            
-            const tempData = [];
-            
-            for (const code of allCodes) {
-                const parl = parliamentMap.get(code);
-                const labor = laborForceMap.get(code);
-                const litF = literacyFemaleMap.get(code);
-                const litM = literacyMaleMap.get(code);
-                const adoFert = adolescentFertilityMap.get(code);
-                const lifeExp = lifeExpectancyMap.get(code);
-                const meta = metadata.get(code);
-                
-                if (parl && labor) {
-                    let literacy_female = litF?.value || null;
-                    let literacy_male = litM?.value || null;
-                    let literacy_ratio = (literacy_female && literacy_male) ? literacy_female / literacy_male : null;
-                    
-                    let adolescent_fertility = adoFert?.value || null;
-                    if (adolescent_fertility !== null) {
-                        withAdolescentCount++;
-                        adolescentFertilityValues.push(adolescent_fertility);
-                    }
-                    
-                    let life_expectancy = lifeExp?.value || null;
-                    if (life_expectancy !== null) {
-                        withLifeExpectancyCount++;
-                        lifeExpectancyValues.push(life_expectancy);
-                    }
-                    
-                    if (literacy_ratio !== null) literacyRatioValues.push(literacy_ratio);
-                    if (literacy_female !== null) literacyFemaleValues.push(literacy_female);
-                    
-                    const countryName = parl.name || labor.name || code;
-                    const region = meta?.region || 'Unknown';
-                    
-                    tempData.push({
-                        code: code,
-                        country: countryName,
-                        region: region,
-                        parliament: parl.value,
-                        laborForce: labor.value,
-                        literacy_female: literacy_female,
-                        literacy_male: literacy_male,
-                        literacy_ratio: literacy_ratio,
-                        adolescent_fertility: adolescent_fertility,
-                        life_expectancy: life_expectancy,
-                        hasLiteracy: literacy_ratio !== null,
-                        hasAdolescentFertility: adolescent_fertility !== null,
-                        hasLifeExpectancy: life_expectancy !== null
-                    });
-                    regionSet.add(region);
-                }
-            }
-            
-            // 存储值域
-            window.domains = {
-                literacyRatio: literacyRatioValues.length > 0 ? [Math.min(...literacyRatioValues), Math.max(...literacyRatioValues)] : [0.7, 1.05],
-                literacyFemale: literacyFemaleValues.length > 0 ? [Math.min(...literacyFemaleValues), Math.max(...literacyFemaleValues)] : [0, 100],
-                adolescentFertility: adolescentFertilityValues.length > 0 ? [Math.min(...adolescentFertilityValues), Math.max(...adolescentFertilityValues)] : [0, 200],
-                lifeExpectancy: lifeExpectancyValues.length > 0 ? [Math.min(...lifeExpectancyValues), Math.max(...lifeExpectancyValues)] : [50, 85]
-            };
-            
-            console.log('值域:', window.domains);
-            
-            allData = tempData;
-            allData.sort((a, b) => b.parliament - a.parliament);
-            
-            const regionSelect = document.getElementById('regionFilter');
-            regionSelect.innerHTML = '<option value="all">全部地区</option>';
-            Array.from(regionSet).sort().forEach(r => {
-                regionSelect.innerHTML += `<option value="${r}">${r}</option>`;
             });
-            
-            setStatus(`✅ 加载完成！共 ${allData.length} 个国家`);
-            setStatusDetail(`议会:${parliamentMap.size} 劳动:${laborForceMap.size} | 识字率:${literacyRatioValues.length} 生育率:${withAdolescentCount} 预期寿命:${withLifeExpectancyCount}`);
-            
-            return allData.length > 0;
-        } catch (error) {
-            console.error('加载失败:', error);
-            setStatus(`加载失败: ${error.message}`, true);
-            return false;
-        }
+        if (brushGroup) brushGroup.remove();
+        brushGroup = g.append("g").attr("class", "brush").call(brush);
+        brushGroup.selectAll(".handle").remove();
+        brushGroup.selectAll(".overlay").attr("cursor", brushMode ? "crosshair" : "default")
+                  .attr("pointer-events", brushMode ? "all" : "none");
+        if (!brushMode) brushGroup.call(brush.move, null);
     }
 
-    function getFilteredData() {
-        let data = currentRegion === "all" ? [...allData] : allData.filter(d => d.region === currentRegion);
-        
-        if (showOnlyComplete) {
-            if (currentSizeMetric === 'literacyRatio' || currentSizeMetric === 'literacyFemale') {
-                data = data.filter(d => d.hasLiteracy);
-            } else if (currentSizeMetric === 'adolescentFertility') {
-                data = data.filter(d => d.hasAdolescentFertility);
-            } else if (currentSizeMetric === 'lifeExpectancy') {
-                data = data.filter(d => d.hasLifeExpectancy);
-            }
-        }
-        
-        return data;
-    }
-
-    function getSizeValue(d, metric) {
-        if (metric === 'none') return null;
-        if (metric === 'literacyRatio') return d.literacy_ratio;
-        if (metric === 'literacyFemale') return d.literacy_female;
-        if (metric === 'adolescentFertility') return d.adolescent_fertility;
-        if (metric === 'lifeExpectancy') return d.life_expectancy;
-        return null;
-    }
-
-    // ========== 面积线性编码：圆的面积 ∝ 数值 ==========
-    // 面积 = π * r²，所以 r = sqrt(面积/π)
-    // 为了让面积与数值成正比，半径与数值的平方根成正比
-    function getRadius(value, metric) {
-        if (metric === 'none' || value === null) return DEFAULT_RADIUS;
-        
-        const domains = window.domains;
-        let minVal, maxVal, normalized;
-        
-        switch(metric) {
-            case 'literacyRatio':
-                minVal = domains.literacyRatio[0];
-                maxVal = domains.literacyRatio[1];
-                if (minVal === maxVal) return DEFAULT_RADIUS;
-                // 线性归一化
-                normalized = (value - minVal) / (maxVal - minVal);
-                normalized = Math.max(0, Math.min(1, normalized));
-                // 半径与归一化值的平方根成正比（面积线性）
-                return RADIUS_MIN + Math.sqrt(normalized) * (RADIUS_MAX - RADIUS_MIN);
-                
-            case 'literacyFemale':
-                minVal = domains.literacyFemale[0];
-                maxVal = domains.literacyFemale[1];
-                if (minVal === maxVal) return DEFAULT_RADIUS;
-                normalized = (value - minVal) / (maxVal - minVal);
-                normalized = Math.max(0, Math.min(1, normalized));
-                return RADIUS_MIN + Math.sqrt(normalized) * (RADIUS_MAX - RADIUS_MIN);
-                
-            case 'adolescentFertility':
-                minVal = domains.adolescentFertility[0];
-                maxVal = domains.adolescentFertility[1];
-                if (minVal === maxVal) return DEFAULT_RADIUS;
-                // 反向编码：生育率越低，归一化值越高
-                normalized = (maxVal - value) / (maxVal - minVal);
-                normalized = Math.max(0, Math.min(1, normalized));
-                return RADIUS_MIN + Math.sqrt(normalized) * (RADIUS_MAX - RADIUS_MIN);
-                
-            case 'lifeExpectancy':
-                minVal = domains.lifeExpectancy[0];
-                maxVal = domains.lifeExpectancy[1];
-                if (minVal === maxVal) return DEFAULT_RADIUS;
-                normalized = (value - minVal) / (maxVal - minVal);
-                normalized = Math.max(0, Math.min(1, normalized));
-                return RADIUS_MIN + Math.sqrt(normalized) * (RADIUS_MAX - RADIUS_MIN);
-                
-            default:
-                return DEFAULT_RADIUS;
-        }
-    }
-
-    function getRegionColor(region) {
-        return regionColors[region] || '#94a3b8';
-    }
-
-    function computeCorrelation(data) {
-        if (data.length < 2) return 0;
-        const xVals = data.map(d => d.parliament);
-        const yVals = data.map(d => d.laborForce);
-        const meanX = xVals.reduce((a,b) => a+b,0)/xVals.length;
-        const meanY = yVals.reduce((a,b) => a+b,0)/yVals.length;
-        let numerator = 0, denomX = 0, denomY = 0;
-        for(let i=0; i<data.length; i++) {
-            const dx = xVals[i] - meanX;
-            const dy = yVals[i] - meanY;
-            numerator += dx * dy;
-            denomX += dx * dx;
-            denomY += dy * dy;
-        }
-        return numerator / Math.sqrt(denomX * denomY);
-    }
-
-    function getSizeDataCount() {
-        const data = getFilteredData();
-        let count = 0;
-        for (const d of data) {
-            if (getSizeValue(d, currentSizeMetric) !== null) count++;
-        }
-        return count;
+    function setupZoom() {
+        if (zoomBehavior) return;
+        zoomBehavior = d3.zoom()
+            .scaleExtent([0.5, 5])
+            .filter(e => !(brushMode && e.type === 'mousedown' && e.button === 0))
+            .on("zoom", e => {
+                if (brushMode && e.sourceEvent?.type === 'mousedown') return;
+                currentTransform = e.transform;
+                g.attr("transform", `translate(${currentTransform.x},${currentTransform.y})scale(${currentTransform.k})`);
+                selectedCountries.clear();
+                updateHighlight();
+                if (brushGroup) brushGroup.call(d3.brush().move, null);
+                hideTooltip();
+            });
+        svg.call(zoomBehavior);
     }
 
     function renderChart() {
         const container = document.getElementById('scatterplot');
-        if (!container) return;
         container.innerHTML = '';
-        
+        selectedCountries.clear();
+        hideTooltip();
         const filtered = getFilteredData();
         if (filtered.length === 0) {
-            container.innerHTML = `<div style="text-align:center; padding:100px; color:#666;">
-                <h3>📊 暂无数据</h3>
-                <p>请尝试关闭筛选选项或切换年份</p>
-            </div>`;
+            container.innerHTML = '<div style="text-align:center; padding:100px;">暂无数据</div>';
             document.getElementById('countryCount').innerHTML = '0';
-            document.getElementById('sizeDataCount').innerHTML = '0';
             return;
         }
-        
-        const sizeDataCount = getSizeDataCount();
-        document.getElementById('sizeDataCount').innerHTML = sizeDataCount;
-        
         const rect = container.parentElement.getBoundingClientRect();
         width = Math.max(600, rect.width - 40);
         height = 550;
-        
         const margin = { top: 50, right: 50, bottom: 60, left: 80 };
-        const innerWidth = width - margin.left - margin.right;
-        const innerHeight = height - margin.top - margin.bottom;
-        
-        svg = d3.select("#scatterplot")
-            .append("svg")
-            .attr("width", width)
-            .attr("height", height)
-            .style("background", "#ffffff");
-        
+        const innerW = width - margin.left - margin.right, innerH = height - margin.top - margin.bottom;
+        svg = d3.select("#scatterplot").append("svg").attr("width", width).attr("height", height).style("background", "#fff");
         g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-        
-        const xMax = d3.max(filtered, d => d.parliament) + 10;
-        const yMax = d3.max(filtered, d => d.laborForce) + 10;
-        xScale = d3.scaleLinear().domain([0, Math.max(xMax, 40)]).range([0, innerWidth]).nice();
-        yScale = d3.scaleLinear().domain([0, Math.max(yMax, 100)]).range([innerHeight, 0]).nice();
-        
-        const xAxis = d3.axisBottom(xScale).tickFormat(d => d + '%');
-        const yAxis = d3.axisLeft(yScale).tickFormat(d => d + '%');
-        
-        g.append("g").attr("class", "x axis").attr("transform", `translate(0,${innerHeight})`).call(xAxis);
-        g.append("g").attr("class", "y axis").call(yAxis);
-        
-        g.append("text").attr("x", innerWidth/2).attr("y", innerHeight + 45).attr("text-anchor", "middle").style("font-size", "12px").text("女性国会席位比例 (%) → 政治赋权");
-        g.append("text").attr("x", -innerHeight/2).attr("y", -55).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("font-size", "12px").text("女性劳动参与率 (%) → 经济参与");
-        
-        g.append("line")
-            .attr("x1", xScale(0))
-            .attr("y1", yScale(0))
-            .attr("x2", xScale(60))
-            .attr("y2", yScale(60))
-            .attr("stroke", "#cbd5e1")
-            .attr("stroke-dasharray", "5,5")
-            .attr("stroke-width", 1);
-        
+        const xMax = d3.max(filtered, d => d.parliament) + 10, yMax = d3.max(filtered, d => d.laborForce) + 10;
+        xScale = d3.scaleLinear().domain([0, Math.max(xMax, 40)]).range([0, innerW]).nice();
+        yScale = d3.scaleLinear().domain([0, Math.max(yMax, 100)]).range([innerH, 0]).nice();
+        g.append("g").attr("class", "x axis").attr("transform", `translate(0,${innerH})`).call(d3.axisBottom(xScale).tickFormat(d => d+'%'));
+        g.append("g").attr("class", "y axis").call(d3.axisLeft(yScale).tickFormat(d => d+'%'));
+        g.append("text").attr("x", innerW/2).attr("y", innerH + 45).attr("text-anchor", "middle").style("font-size", "12px").text("女性国会席位比例 (%) → 政治赋权");
+        g.append("text").attr("x", -innerH/2).attr("y", -55).attr("text-anchor", "middle").attr("transform", "rotate(-90)").style("font-size", "12px").text("女性劳动参与率 (%) → 经济参与");
+        g.append("line").attr("x1", xScale(0)).attr("y1", yScale(0)).attr("x2", xScale(60)).attr("y2", yScale(60)).attr("stroke", "#cbd5e1").attr("stroke-dasharray", "5,5");
         if (filtered.length > 2) {
-            const xVals = filtered.map(d => d.parliament);
-            const yVals = filtered.map(d => d.laborForce);
-            const meanX = xVals.reduce((a,b)=>a+b,0)/xVals.length;
-            const meanY = yVals.reduce((a,b)=>a+b,0)/yVals.length;
-            let numerator=0, denominator=0;
-            for(let i=0;i<xVals.length;i++){
-                numerator += (xVals[i]-meanX)*(yVals[i]-meanY);
-                denominator += (xVals[i]-meanX)*(xVals[i]-meanX);
-            }
-            const slope = numerator/denominator;
-            const intercept = meanY - slope*meanX;
-            const linePoints = [{x: 0, y: intercept}, {x: d3.max(xVals) + 10, y: slope * (d3.max(xVals) + 10) + intercept}];
+            const xv = filtered.map(d => d.parliament), yv = filtered.map(d => d.laborForce);
+            const mx = xv.reduce((a,b)=>a+b,0)/xv.length, my = yv.reduce((a,b)=>a+b,0)/yv.length;
+            let num=0, den=0;
+            for(let i=0;i<xv.length;i++) { num += (xv[i]-mx)*(yv[i]-my); den += (xv[i]-mx)*(xv[i]-mx); }
+            const slope = num/den, intercept = my - slope*mx;
             const lineGen = d3.line().x(d => xScale(d.x)).y(d => yScale(d.y));
-            g.append("path").datum(linePoints).attr("d", lineGen).attr("fill", "none").attr("stroke", "#ef4444").attr("stroke-width", 2).attr("stroke-dasharray", "6,4");
+            g.append("path").datum([{x:0, y:intercept}, {x:d3.max(xv)+10, y:slope*(d3.max(xv)+10)+intercept}]).attr("d", lineGen).attr("fill", "none").attr("stroke", "#ef4444").attr("stroke-width", 2).attr("stroke-dasharray", "6,4");
         }
-        
-        // 绘制圆圈 - 使用面积线性编码
-        g.selectAll(".circle").data(filtered).enter().append("circle")
-            .attr("cx", d => xScale(d.parliament))
-            .attr("cy", d => yScale(d.laborForce))
-            .attr("r", d => getRadius(getSizeValue(d, currentSizeMetric), currentSizeMetric))
-            .attr("fill", d => getRegionColor(d.region))
-            .attr("stroke", "white")
-            .attr("stroke-width", 1)
-            .attr("opacity", 0.75)
-            .style("cursor", "pointer")
-            .on("mouseenter", function(event, d) {
+        circles = g.selectAll(".circle").data(filtered).enter().append("circle")
+            .attr("cx", d => xScale(d.parliament)).attr("cy", d => yScale(d.laborForce))
+            .attr("r", d => getRadius(getSizeValue(d)))
+            .attr("fill", d => regionColors[d.region] || '#94a3b8')
+            .attr("stroke", "white").attr("stroke-width", 1).attr("opacity", 0.75)
+            .on("mouseenter", function(e, d) {
+                if (brushMode) return;
                 d3.select(this).attr("stroke", "#000").attr("stroke-width", 2);
-                if (tooltip) {
-                    let sizeText = '';
-                    if (currentSizeMetric === 'literacyRatio') {
-                        sizeText = d.literacy_ratio ? `⚖️ 性别比: ${d.literacy_ratio.toFixed(3)}` : '📚 识字率数据: 暂无';
-                    } else if (currentSizeMetric === 'literacyFemale') {
-                        sizeText = d.literacy_female ? `📚 女性识字率: ${d.literacy_female.toFixed(1)}%` : '📚 识字率数据: 暂无';
-                    } else if (currentSizeMetric === 'adolescentFertility') {
-                        sizeText = d.adolescent_fertility ? `👶 青少年生育率: ${d.adolescent_fertility.toFixed(1)}/千人\n    (圆圈越大=生育率越低)` : '👶 生育率数据: 暂无';
-                    } else if (currentSizeMetric === 'lifeExpectancy') {
-                        sizeText = d.life_expectancy ? `💪 女性预期寿命: ${d.life_expectancy.toFixed(1)}岁` : '💪 寿命数据: 暂无';
-                    } else {
-                        sizeText = '';
-                    }
-                    
-                    tooltip.style("opacity", 1)
-                        .html(`<strong>${d.country}</strong><br/>
-                        🏛️ 议会女性: ${d.parliament.toFixed(1)}%<br/>
-                        👩 劳动参与率: ${d.laborForce.toFixed(1)}%<br/>
-                        ${sizeText}<br/>
-                        🌍 ${d.region}`)
-                        .style("left", (event.pageX + 15) + "px")
-                        .style("top", (event.pageY - 28) + "px");
-                }
+                let sizeText = '';
+                if (currentSizeMetric === 'literacyRatio') sizeText = d.literacy_ratio ? `性别比: ${d.literacy_ratio.toFixed(3)}` : '无数据';
+                else if (currentSizeMetric === 'literacyFemale') sizeText = d.literacy_female ? `女性识字率: ${d.literacy_female.toFixed(1)}%` : '无数据';
+                else if (currentSizeMetric === 'adolescentFertility') sizeText = d.adolescent_fertility ? `青少年生育率: ${d.adolescent_fertility.toFixed(1)}/千人` : '无数据';
+                else if (currentSizeMetric === 'lifeExpectancy') sizeText = d.life_expectancy ? `预期寿命: ${d.life_expectancy.toFixed(1)}岁` : '无数据';
+                tooltip.style("opacity", 1).html(`<strong>${d.country}</strong><br/>议会: ${d.parliament.toFixed(1)}%<br/>劳动: ${d.laborForce.toFixed(1)}%<br/>${sizeText}<br/>${d.region}`)
+                    .style("left", (e.pageX + 15) + "px").style("top", (e.pageY - 28) + "px");
             })
             .on("mouseleave", function() {
-                d3.select(this).attr("stroke", "white").attr("stroke-width", 1);
-                if (tooltip) tooltip.style("opacity", 0);
+                d3.select(this).attr("stroke", selectedCountries.has(d.code) ? "#f59e0b" : "white")
+                               .attr("stroke-width", selectedCountries.has(d.code) ? 3 : 1);
+                hideTooltip();
             });
-        
         tooltip = d3.select("body").append("div").attr("class", "tooltip").style("opacity", 0);
-        
-        const zoomBehavior = d3.zoom()
-            .scaleExtent([0.5, 5])
-            .on("zoom", (event) => {
-                g.attr("transform", `translate(${event.transform.x},${event.transform.y})scale(${event.transform.k})`);
-            });
-        svg.call(zoomBehavior);
-        
+        setupZoom();
+        setupBrush();
         document.getElementById('countryCount').innerHTML = filtered.length;
-        const corr = computeCorrelation(filtered);
-        document.getElementById('correlation').innerHTML = corr.toFixed(2);
-        const best = filtered.reduce((a,b) => (a.parliament > b.parliament ? a : b), filtered[0]);
+        document.getElementById('correlation').innerHTML = computeCorrelation(filtered).toFixed(2);
+        const best = filtered.reduce((a,b) => a.parliament > b.parliament ? a : b, filtered[0]);
         document.getElementById('bestCountry').innerHTML = best?.country || "--";
-        
         updateLegend();
+        updateModeUI();
     }
 
-    async function updateYear() {
-        currentYear = parseInt(document.getElementById('yearSelect').value);
-        const success = await loadAllData();
-        if (success) renderChart();
+    function updateModeUI() {
+        const btn = document.getElementById('brushModeBtn');
+        const indicator = document.getElementById('modeIndicator');
+        if (brushMode) {
+            btn.textContent = '🔴 刷选模式 (开启)';
+            btn.classList.add('mode-btn-active');
+            indicator.innerHTML = '刷选模式 (拖拽框选)';
+            indicator.style.background = '#fee2e2';
+            svg.style('cursor', 'crosshair');
+        } else {
+            btn.textContent = '🔘 刷选模式 (关闭)';
+            btn.classList.remove('mode-btn-active');
+            indicator.innerHTML = '平移模式 (拖拽移动)';
+            indicator.style.background = '#eef2ff';
+            svg.style('cursor', 'grab');
+        }
+        if (brushGroup) {
+            brushGroup.selectAll(".overlay").attr("cursor", brushMode ? "crosshair" : "default")
+                      .attr("pointer-events", brushMode ? "all" : "none");
+            if (!brushMode) { brushGroup.call(d3.brush().move, null); selectedCountries.clear(); updateHighlight(); }
+        }
+        hideTooltip();
+    }
+
+    function toggleBrushMode() {
+        brushMode = !brushMode;
+        if (zoomBehavior && svg) { svg.call(zoomBehavior.transform, d3.zoomIdentity); currentTransform = d3.zoomIdentity; }
+        selectedCountries.clear();
+        updateHighlight();
+        if (brushGroup) brushGroup.call(d3.brush().move, null);
+        hideTooltip();
+        updateModeUI();
     }
 
     function resetAll() {
-        currentRegion = "all";
-        currentSizeMetric = "literacyRatio";
-        showOnlyComplete = false;
+        currentRegion = "all"; currentSizeMetric = "literacyRatio"; showOnlyComplete = false; brushMode = false;
         document.getElementById('regionFilter').value = "all";
         document.getElementById('sizeMetric').value = "literacyRatio";
         document.getElementById('showOnlyComplete').checked = false;
         renderChart();
+        updateModeUI();
     }
 
-    document.getElementById('regionFilter').addEventListener('change', (e) => {
-        currentRegion = e.target.value;
+    async function updateYear() {
+        currentYear = parseInt(document.getElementById('yearSelect').value);
+        await loadAllData();
         renderChart();
-    });
-    
-    document.getElementById('sizeMetric').addEventListener('change', (e) => {
-        currentSizeMetric = e.target.value;
-        renderChart();
-    });
-    
-    document.getElementById('showOnlyComplete').addEventListener('change', (e) => {
-        showOnlyComplete = e.target.checked;
-        renderChart();
-    });
-    
-    document.getElementById('yearSelect').addEventListener('change', updateYear);
-    document.getElementById('resetBtn').addEventListener('click', resetAll);
-    
-    async function init() {
-        const success = await loadAllData();
-        if (success) renderChart();
     }
-    
-    init();
+
+    document.getElementById('regionFilter').onchange = () => { currentRegion = document.getElementById('regionFilter').value; renderChart(); };
+    document.getElementById('sizeMetric').onchange = (e) => { currentSizeMetric = e.target.value; renderChart(); };
+    document.getElementById('showOnlyComplete').onchange = (e) => { showOnlyComplete = e.target.checked; renderChart(); };
+    document.getElementById('yearSelect').onchange = updateYear;
+    document.getElementById('resetBtn').onclick = resetAll;
+    document.getElementById('brushModeBtn').onclick = toggleBrushMode;
+
+    loadAllData().then(() => renderChart());
 </script>
 </body>
 </html>
