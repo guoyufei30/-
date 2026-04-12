@@ -26,6 +26,7 @@
         .checkbox-group input { width: 18px; height: 18px; cursor: pointer; margin: 0; }
         .status-bar { padding: 0.75rem 1.5rem; background: #eef2ff; font-size: 0.8rem; color: #1e40af; border-bottom: 1px solid #e2e8f0; text-align: center; }
         .vis-container { padding: 1.5rem; min-height: 550px; }
+        .chart-hint { text-align: center; font-size: 0.7rem; color: #64748b; margin-top: 0.5rem; padding: 0.25rem; background: #f8fafc; border-radius: 0.5rem; display: inline-block; width: auto; }
         svg { display: block; width: 100%; background: #ffffff; border-radius: 0.75rem; cursor: grab; }
         svg:active { cursor: grabbing; }
         .tooltip { position: absolute; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); color: white; padding: 10px 14px; border-radius: 10px; font-size: 0.75rem; pointer-events: none; z-index: 100; max-width: 300px; line-height: 1.5; }
@@ -103,7 +104,14 @@
         <button id="resetBtn">重置视图</button>
     </div>
 
-    <div class="vis-container"><div id="scatterplot"></div></div>
+    <div class="vis-container">
+        <div id="scatterplot"></div>
+        <div style="text-align: center; margin-top: 0.5rem;">
+            <span style="font-size: 0.7rem; color: #64748b; background: #f1f5f9; padding: 0.2rem 0.8rem; border-radius: 20px;">
+                💡 提示：鼠标悬停在图表上时滚轮缩放图表，否则滚轮滚动网页
+            </span>
+        </div>
+    </div>
 
     <div class="legend">
         <span><span class="legend-color" style="background: #3b82f6;"></span> 欧洲</span>
@@ -121,7 +129,7 @@
         <div class="legend-size-group" id="uniformLegend" style="display:none;">
             <span class="legend-size-item"><span class="legend-circle circle-uniform"></span>统一大小</span>
         </div>
-        <span>滚轮缩放 | 拖拽平移 | 悬停详情</span>
+        <span>拖拽平移 | 悬停详情</span>
         <span id="modeIndicator" style="background:#f1f5f9; padding:2px 8px; border-radius:16px;">平移模式</span>
     </div>
 
@@ -134,14 +142,24 @@
 
     <div class="documentation">
         <div class="doc-section">
-            <h3>交互说明</h3>
-            <ul>
-                <li><strong>平移模式（默认）</strong>：鼠标拖拽平移，滚轮缩放，悬停显示详情</li>
-                <li><strong>刷选模式</strong>：点击按钮后，拖拽框选高亮国家</li>
-            </ul>
+            <h3>可视化方案旨在解答的问题</h3>
+            <p>本可视化工具旨在探索<strong>女性政治赋权与经济赋权之间的关系</strong>，具体回答：女性在国会中的代表比例和女性在劳动中的比例是否有相关性；女性在政治和经济中的地位是否会影响女性权益,体现在预期寿命、识字率、青少年生育率这几个方面；以及上述特征有没有地区特征。</p>
+        </div>
+        <div class="doc-section">
+            <h3>设计决策</h3>
+            <p><strong>散点图</strong>最适合展示两个连续变量关系；<strong>颜色编码地区</strong>便于发现区域性规律；<strong>面积编码第三维度</strong>增加信息密度，研究更多相互影响的关系；<strong>刷选/缩放/平移</strong>支持探索性分析。</p>
+            <p>考虑过的其他设计选项包括：使用热力图展示地区分布，但散点图能更好地展示变量间的关系。使用圆圈的颜色深浅来表示另一维度数据，但是最后颜色被用来表示地区。使用半径线性编码，因为面积差异很不明显，但是半径显示容易造成差异过大的误解。</p>
+        </div>
+        <div class="doc-section">
+            <h3>数据来源</h3>
+            <p>世界银行开放数据平台：议会数据(SG.GEN.PARL.ZS)、劳动参与率(SL.TLF.CACT.FE.ZS)、识字率(SE.ADT.LITR.FE/MA.ZS)、青少年生育率(SP.ADO.TFRT)、预期寿命(SP.DYN.LE00.FE.IN)</p>
+        </div>
+        <div class="doc-section">
+            <h3>开发流程</h3>
+            <p><strong>总耗时约22小时</strong>：确定主题和使用数据5h，可视化设计5h，交互功能开发6h，调试优化6h。<strong>最具挑战环节</strong>：刷选与缩放功能冲突解决，最终通过模式切换分离两种交互。</p>
         </div>
     </div>
-    <footer>数据来源：世界银行开放数据</footer>
+    <footer>数据来源：世界银行开放数据 | 鼠标悬停图表时滚轮缩放，否则滚动网页</footer>
 </div>
 
 <script>
@@ -385,11 +403,22 @@
 
     function setupZoom() {
         if (zoomBehavior) return;
+        
+        let isHoveringChart = false;
+        
+        svg.on("mouseenter", () => { isHoveringChart = true; })
+           .on("mouseleave", () => { isHoveringChart = false; });
+        
         zoomBehavior = d3.zoom()
             .scaleExtent([0.5, 5])
-            .filter(e => !(brushMode && e.type === 'mousedown' && e.button === 0))
-            .on("zoom", e => {
+            .filter(function(event) {
+                if (brushMode && event.type === 'mousedown' && event.button === 0) return false;
+                if (event.type === 'wheel') return isHoveringChart;
+                return true;
+            })
+            .on("zoom", (e) => {
                 if (brushMode && e.sourceEvent?.type === 'mousedown') return;
+                if (!isHoveringChart && e.sourceEvent?.type === 'wheel') return;
                 currentTransform = e.transform;
                 g.attr("transform", `translate(${currentTransform.x},${currentTransform.y})scale(${currentTransform.k})`);
                 selectedCountries.clear();
